@@ -500,6 +500,14 @@ section.notice { display: flex; flex-direction: column; gap: 8px; color: var(--i
   background: var(--surface-2); font-size: 21px; font-weight: 700;
 }
 .big-letter { font-size: 20px; font-weight: 700; }
+.tile-tools { display: flex; gap: 8px; }
+.chip-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px;
+  border-radius: 999px; border: 0; background: var(--primary-soft); color: var(--primary);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.chip-btn:active { opacity: .8; }
+.chip-btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
 /* Implikationen */
 .premises { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; counter-reset: p; }
@@ -519,7 +527,7 @@ section.notice { display: flex; flex-direction: column; gap: 8px; color: var(--i
   font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
 }
 .idcard-head > span:first-child { margin-right: auto; }
-.idcard-no { letter-spacing: .04em; font-variant-numeric: tabular-nums; color: var(--header-muted); }
+.idcard-num { font-variant-numeric: tabular-nums; letter-spacing: .03em; }
 .idcard-body { display: flex; gap: 14px; padding: 14px; align-items: flex-start; }
 .idcard-body .avatar { flex: 0 0 84px; width: 84px; height: 84px; border-radius: 10px; display: block; }
 .idcard-fields { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; font-size: 14.5px; min-width: 0; }

@@ -52,6 +52,48 @@
     return word.split("").reverse().join("");
   }
 
+  const SHUFFLE_ICON =
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.5c4 0 5 10 9 10H20"/><path d="M4 17h3.5c1.6 0 2.7-1.6 3.6-3.6"/>' +
+    '<path d="M13 10.2c.9-1.8 2-3.2 3.5-3.2H20"/><path d="M17.5 4.5L20 7l-2.5 2.5"/><path d="M17.5 14.5L20 17l-2.5 2.5"/></svg>';
+
+  /* Buchstaben neu anordnen, mit kurzer Animation (FLIP) */
+  function reorder(box, order) {
+    const tiles = Array.from(box.children);
+    const before = new Map(tiles.map((t) => [t, t.getBoundingClientRect()]));
+    order.forEach((t) => box.append(t));
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) return;
+    for (const t of tiles) {
+      const a = before.get(t), b = t.getBoundingClientRect();
+      const dx = a.left - b.left, dy = a.top - b.top;
+      if (!dx && !dy) continue;
+      t.animate([{ transform: "translate(" + dx + "px," + dy + "px)" }, { transform: "none" }], { duration: 280, easing: "cubic-bezier(.2,.7,.2,1)" });
+    }
+  }
+
+  document.addEventListener("click", (e) => {
+    const btn = e.target.closest('[data-act="tiles-shuffle"], [data-act="tiles-reset"]');
+    if (!btn) return;
+    const card = btn.closest(".prompt-card") || document;
+    const box = card.querySelector(".anagram");
+    if (!box) return;
+    const tiles = Array.from(box.children);
+    const reset = card.querySelector('[data-act="tiles-reset"]');
+    if (btn.getAttribute("data-act") === "tiles-reset") {
+      reorder(box, tiles.slice().sort((a, b) => a.dataset.pos - b.dataset.pos));
+      if (reset) reset.hidden = true;
+      return;
+    }
+    const cur = tiles.map((t) => t.dataset.pos).join(",");
+    let next = tiles;
+    for (let t = 0; t < 20; t++) {
+      next = U.shuffle(tiles);
+      if (next.map((x) => x.dataset.pos).join(",") !== cur) break;
+    }
+    reorder(box, next);
+    if (reset) reset.hidden = false;
+  });
+
   function letterHtml(l) {
     return '<span class="big-letter">' + l + "</span>";
   }
@@ -71,7 +113,11 @@
       prompt:
         '<p class="prompt-q">Mit welchem Buchstaben beginnt das Wort?</p>' +
         '<div class="anagram" aria-label="Buchstaben: ' + scrambled.split("").join(" ") + '">' +
-        scrambled.split("").map((l) => '<span class="tile">' + l + "</span>").join("") +
+        scrambled.split("").map((l, i) => '<span class="tile" data-pos="' + i + '">' + l + "</span>").join("") +
+        "</div>" +
+        '<div class="tile-tools">' +
+        '<button type="button" class="chip-btn" data-act="tiles-shuffle">' + SHUFFLE_ICON + "Mischen</button>" +
+        '<button type="button" class="chip-btn" data-act="tiles-reset" hidden>Original</button>' +
         "</div>",
       options,
       correct,

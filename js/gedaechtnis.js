@@ -75,14 +75,14 @@
     const lastNames = uniquePick(LAST, n);
     const countries = uniquePick(COUNTRIES, n);
     const numbers = new Set();
-    while (numbers.size < n) numbers.add(String(randInt(10000, 99999)));
+    while (numbers.size < n) numbers.add(String(randInt(1000000, 9999999)));
     const nums = Array.from(numbers);
     const bdays = new Set();
     const bd = [];
     while (bd.length < n) {
       const d = randInt(1, 28), m = randInt(0, 11);
       const key = d + "." + m;
-      if (!bdays.has(key)) { bdays.add(key); bd.push(d + ". " + MONTHS[m]); }
+      if (!bdays.has(key)) { bdays.add(key); bd.push(d + ". " + MONTHS[m] + " " + randInt(1955, 2008)); }
     }
     const firstF = shuffle(FIRST_F), firstM = shuffle(FIRST_M);
     const cards = [];
@@ -110,14 +110,15 @@
     opts = opts || {};
     return (
       '<article class="idcard' + (opts.highlight ? " is-highlight" : "") + '">' +
-      '<div class="idcard-head"><span>Allergieausweis</span><span class="idcard-no">Nr. ' + c.number + "</span></div>" +
+      '<div class="idcard-head"><span>Allergieausweis</span></div>' +
       '<div class="idcard-body">' + avatarSvg(c.look, "Foto von " + c.name) +
       '<dl class="idcard-fields">' +
       "<dt>Name</dt><dd>" + esc(c.name) + "</dd>" +
-      "<dt>Geburtstag</dt><dd>" + c.birthday + "</dd>" +
+      "<dt>Geburtsdatum</dt><dd>" + c.birthday + "</dd>" +
       "<dt>Medikamente</dt><dd>" + c.meds + "</dd>" +
       "<dt>Blutgruppe</dt><dd>" + c.blood + "</dd>" +
       "<dt>Allergien</dt><dd>" + (c.allergies.length ? c.allergies.join(", ") : "keine") + "</dd>" +
+      "<dt>Ausweisnummer</dt><dd class=\"idcard-num\">" + c.number + "</dd>" +
       "<dt>Ausgestellt in</dt><dd>" + c.country + "</dd>" +
       "</dl></div></article>"
     );
@@ -128,7 +129,7 @@
   const REF = {
     photo: (c) => ({ html: '<span class="ref-photo">' + avatarSvg(c.look, "abgebildete Person") + "</span>", text: "die abgebildete Person" }),
     name: (c) => ({ text: esc(c.name) }),
-    birthday: (c) => ({ text: "die Person, die am " + c.birthday + " Geburtstag hat" }),
+    birthday: (c) => ({ text: "die Person, die am " + c.birthday + " geboren wurde" }),
     number: (c) => ({ text: "die Person mit der Ausweisnummer " + c.number }),
     country: (c) => ({ text: "die Person, deren Ausweis " + inCountry(c.country) + " ausgestellt wurde" }),
   };
@@ -136,7 +137,12 @@
   // Was gefragt wird: Fragetext (mit Bezug), Antwort, mögliche Ablenker
   const ASK = {
     name: { q: (r) => "Wie heißt " + r + "?", val: (c) => esc(c.name), from: (cs) => cs.map((c) => esc(c.name)) },
-    birthday: { q: (r) => "Wann hat " + r + " Geburtstag?", val: (c) => c.birthday, from: (cs) => cs.map((c) => c.birthday) },
+    birthday: {
+      q: (r) => "Wann wurde " + r + " geboren?",
+      val: (c) => c.birthday,
+      // andere Ausweise plus derselbe Tag mit anderem Jahr, damit man sich das Jahr merken muss
+      from: (cs, c) => cs.map((x) => x.birthday).concat(shuffle([-3, -2, -1, 1, 2, 3]).slice(0, 2).map((d) => c.birthday.replace(/\d{4}$/, (y) => String(Number(y) + d)))),
+    },
     meds: { q: (r) => "Nimmt " + r + " Medikamente ein?", val: (c) => c.meds, fixed: ["Ja", "Nein"] },
     blood: { q: (r) => "Welche Blutgruppe hat " + r + "?", val: (c) => c.blood, fixed: BLOOD },
     number: { q: (r) => "Welche Ausweisnummer hat " + r + "?", val: (c) => c.number, from: (cs) => cs.map((c) => c.number) },
@@ -170,7 +176,12 @@
       const ref = REF[refKind](c);
       let q = ask.q(ref.text);
       if (askKey === "country" && refKind !== "name") {
-        q = "In welchem Land wurde der Ausweis ausgestellt, der zu " + dative(ref.text) + " gehört?";
+        // „der Person, die … geboren wurde“ -> Nebensatz ans Ende stellen
+        const g = dative(ref.text);
+        const cut = g.indexOf(", ");
+        q = cut > 0
+          ? "In welchem Land wurde der Ausweis " + g.slice(0, cut) + " ausgestellt" + g.slice(cut) + "?"
+          : "In welchem Land wurde der Ausweis " + g + " ausgestellt?";
       }
       q = capital(q);
 
@@ -187,7 +198,7 @@
         if (askKey === "blood") options.push("Keine der Antworten ist richtig.");
       } else {
         const right = ask.val(c);
-        const pool = Array.from(new Set(ask.from(cards))).filter((v) => v !== right);
+        const pool = Array.from(new Set(ask.from(cards, c))).filter((v) => v !== right);
         ({ options, correct } = U.withNone(right, pool, 0.15));
       }
 
