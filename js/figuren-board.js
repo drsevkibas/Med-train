@@ -50,7 +50,9 @@
       d: "M-5.5 -2.2 A6 6 0 1 1 -4.6 3.9 M-5.5 -2.2 L-6.4 -6.6 M-5.5 -2.2 L-1.3 -3.4",
     });
     handle.append(handleLine, handleHit, handleDot, handleIcon);
-    svg.append(layer, handle);
+    const angleLayer = el("g", { class: "angles", "aria-hidden": "true" });
+    let showAngles = !!opts.showAngles;
+    svg.append(layer, angleLayer, handle);
     container.replaceChildren(svg);
 
     const nodes = task.pieces.map((p, i) => {
@@ -60,13 +62,66 @@
       return g;
     });
 
+    // Winkelbeschriftungen: eine Gruppe pro Teil, Text bleibt immer aufrecht
+    const labels = task.pieces.map((piece) => {
+      const g = el("g", { class: "angle-group" });
+      const items = [];
+      const n = piece.local.length;
+      const cand = [];
+      (piece.vtx || []).forEach((v, j) => {
+        if (v.a > 172) return; // Punkte auf Rundungen auslassen
+        const p = piece.local[j];
+        const a = piece.local[(j - 1 + n) % n], b = piece.local[(j + 1) % n];
+        const ua = [a[0] - p[0], a[1] - p[1]], ub = [b[0] - p[0], b[1] - p[1]];
+        const la = Math.hypot(ua[0], ua[1]) || 1, lb = Math.hypot(ub[0], ub[1]) || 1;
+        // entlang der Winkelhalbierenden ins Teil hinein; spitze Ecken etwas weiter
+        let bx = ua[0] / la + ub[0] / lb, by = ua[1] / la + ub[1] / lb;
+        const bl = Math.hypot(bx, by) || 1;
+        bx /= bl; by /= bl;
+        const half = (v.a * Math.PI) / 360;
+        const d = Math.min(30, Math.min(la, lb) * 0.6, 13 / Math.max(0.35, Math.sin(half)));
+        cand.push({ lp: [p[0] + bx * d, p[1] + by * d], corner: v.corner, text: Math.round(v.a) + "°" });
+      });
+      // bei Platzmangel: Ecken der Gesamtfigur behalten, andere weglassen
+      cand.sort((x, y) => (y.corner ? 1 : 0) - (x.corner ? 1 : 0));
+      const kept = [];
+      for (const c of cand) {
+        if (kept.every((k) => Math.hypot(k.lp[0] - c.lp[0], k.lp[1] - c.lp[1]) > 24)) kept.push(c);
+      }
+      for (const c of kept) {
+        const t = el("text", { class: "angle-label" + (c.corner ? " is-corner" : ""), "text-anchor": "middle", "dominant-baseline": "central" });
+        t.textContent = c.text;
+        g.append(t);
+        items.push({ t, lp: c.lp, corner: c.corner });
+      }
+      angleLayer.append(g);
+      return { g, items };
+    });
+
+    function renderLabels(k) {
+      if (!showAngles) return;
+      const p = task.pieces[k].pose;
+      for (const it of labels[k].items) {
+        const [rx, ry] = G.rotate(it.lp, p.a);
+        it.t.setAttribute("x", (p.x + rx).toFixed(1));
+        it.t.setAttribute("y", (p.y + ry).toFixed(1));
+      }
+    }
+
     function render(i) {
       const list = i == null ? task.pieces.map((_, k) => k) : [i];
       for (const k of list) {
         const p = task.pieces[k].pose;
         nodes[k].setAttribute("transform", "translate(" + p.x.toFixed(2) + " " + p.y.toFixed(2) + ") rotate(" + p.a.toFixed(2) + ")");
+        renderLabels(k);
       }
       renderHandle();
+    }
+
+    function setShowAngles(v) {
+      showAngles = !!v;
+      svg.classList.toggle("show-angles", showAngles);
+      render();
     }
 
     let handleAt = null; // feste Weltposition während des Drehens
@@ -373,9 +428,10 @@
       animate(list.map((o) => ({ i: o.i, to: Object.assign({}, o.to) })), 500);
     }
 
-    render();
+    setShowAngles(showAngles);
 
     return {
+      setShowAngles,
       rotateSelected,
       showSolution,
       reshuffle,

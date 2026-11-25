@@ -373,7 +373,7 @@ section.notice { display: flex; flex-direction: column; gap: 8px; color: var(--i
 }
 .tool + .tool { border-left: 1px solid var(--line); }
 .tool:active { background: var(--surface-2); }
-.tool.toggle[aria-pressed="true"] { background: var(--primary-soft); }
+
 .tool span { white-space: nowrap; color: var(--ink); }
 
 /* ---------- Antwortkreise ---------- */
@@ -539,6 +539,70 @@ section.notice { display: flex; flex-direction: column; gap: 8px; color: var(--i
 .ref .avatar { width: 108px; height: 108px; border-radius: 14px; display: block; }
 .cards-details summary { cursor: pointer; font-weight: 600; color: var(--primary); padding-block: 6px; }
 .cards-details[open] summary { margin-bottom: 8px; }
+
+/* ---------- Winkel auf dem Spielfeld ---------- */
+.angles { pointer-events: none; display: none; }
+.board.show-angles .angles { display: inline; }
+.angle-label {
+  font: 700 11px var(--font); fill: #ffffff;
+  paint-order: stroke; stroke: var(--piece-stroke); stroke-width: 3px; stroke-linejoin: round;
+}
+.angle-label.is-corner { fill: var(--accent); stroke: #1a1203; font-size: 12.5px; }
+.board.is-complete .angle-label:not(.is-corner) { display: none; }
+.angle-hint { margin-top: 6px; color: var(--ink); }
+.feedback .link-btn { margin-top: 8px; display: inline-block; }
+
+/* Chip-Leiste */
+.chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip-btn.is-toggle { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.chip-btn.is-toggle svg { color: var(--muted); }
+.chip-btn.is-toggle[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); }
+.chip-btn.is-toggle[aria-pressed="true"] svg { color: var(--primary-ink); }
+
+/* ---------- Tipps ---------- */
+.tips { display: flex; flex-direction: column; gap: 16px; }
+.tips-lead { color: var(--muted); }
+.angle-table { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.angle-card {
+  display: flex; flex-direction: column; align-items: center; text-align: center; gap: 2px;
+  padding: 12px 8px; border-radius: var(--radius-sm); background: var(--surface-2);
+}
+.angle-card svg { width: 72px; height: 72px; margin-bottom: 4px; }
+.demo-shape { fill: var(--primary-soft); stroke: var(--primary); stroke-width: .05; stroke-linejoin: round; }
+.demo-arc { fill: none; stroke: var(--accent); stroke-width: .09; stroke-linecap: round; }
+.demo-dot { fill: var(--accent); }
+.angle-name { font-weight: 600; font-size: 14px; }
+.angle-val { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.angle-help { font-size: 12px; color: var(--muted); }
+.tips-steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; }
+.tips-steps strong { display: block; }
+
+/* ---------- Blatt von unten ---------- */
+html.no-scroll, html.no-scroll body { overflow: hidden; }
+.sheet-backdrop {
+  position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-end; justify-content: center;
+  background: rgba(5, 12, 16, .45);
+}
+.sheet {
+  width: min(560px, 100%); max-height: 88vh; display: flex; flex-direction: column;
+  background: var(--paper); color: var(--ink); border-radius: 20px 20px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, .25);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: sheet-in .25s cubic-bezier(.2, .7, .2, 1);
+}
+@keyframes sheet-in { from { transform: translateY(24px); } to { transform: none; } }
+.sheet-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px));
+  border-bottom: 1px solid var(--line);
+}
+.sheet-head h2 { font-size: 18px; }
+.sheet-close { border: 0; background: none; color: var(--primary); font-weight: 700; font-size: 16px; cursor: pointer; padding: 6px 2px; }
+.sheet-body {
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 16px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+}
+button.mode { border: 0; font: inherit; text-align: left; cursor: pointer; width: 100%; }
 
 /* ---------- Dialog ---------- */
 .dialog-backdrop {

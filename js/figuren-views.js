@@ -16,7 +16,51 @@
     shuffle: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h3.5c4 0 5 10 9 10H20"/><path d="M4 17h3.5c1.6 0 2.7-1.6 3.6-3.6"/><path d="M13 10.2c.9-1.8 2-3.2 3.5-3.2H20"/><path d="M17.5 4.5L20 7l-2.5 2.5"/><path d="M17.5 14.5L20 17l-2.5 2.5"/></svg>',
     eye: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5S21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></svg>',
     magnet: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4v7a6 6 0 0 0 12 0V4"/><path d="M6 8h4M14 8h4"/><path d="M10 4v7a2 2 0 0 0 4 0V4"/></svg>',
+    angle: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16M4 19L15 6"/><path d="M10 19a6 6 0 0 0-1.9-4.4"/></svg>',
+    bulb: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>',
   };
+
+  /* ---------- Tipps: Winkel und Ecken ---------- */
+  function cornerDemo(key) {
+    // Grundform mit markierter oberer Ecke und Winkelbogen
+    const pts = T().NORMALIZED[key];
+    let top = 0;
+    pts.forEach((p, i) => { if (p[1] < pts[top][1] - 1e-9) top = i; });
+    const n = pts.length, v = pts[top], a = pts[(top - 1 + n) % n], b = pts[(top + 1) % n];
+    const r = 0.38;
+    const ua = [a[0] - v[0], a[1] - v[1]], ub = [b[0] - v[0], b[1] - v[1]];
+    const la = Math.hypot(ua[0], ua[1]), lb = Math.hypot(ub[0], ub[1]);
+    const pa = [v[0] + (ua[0] / la) * r, v[1] + (ua[1] / la) * r], pb = [v[0] + (ub[0] / lb) * r, v[1] + (ub[1] / lb) * r];
+    return '<svg viewBox="-1.25 -1.25 2.5 2.5" aria-hidden="true"><polygon class="demo-shape" points="' + G.pointsAttr(pts) + '"/>' +
+      '<path class="demo-arc" d="M' + pa[0].toFixed(3) + " " + pa[1].toFixed(3) + " A" + r + " " + r + " 0 0 " + (ua[0] * ub[1] - ua[1] * ub[0] > 0 ? 1 : 0) + " " + pb[0].toFixed(3) + " " + pb[1].toFixed(3) + '"/>' +
+      '<circle class="demo-dot" cx="' + v[0].toFixed(3) + '" cy="' + v[1].toFixed(3) + '" r="0.09"/></svg>';
+  }
+
+  function tipsHtml() {
+    const rows = [["fuenfeck", "108°", "90° + 18°"], ["sechseck", "120°", "90° + 30°"], ["siebeneck", "≈ 129°", "zwischen 6- und 8-Eck"], ["achteck", "135°", "genau zwischen 90° und 180°"]];
+    return (
+      '<div class="tips">' +
+      '<p class="tips-lead">In der Prüfung musst du oft entscheiden, ob die Teile ein Fünf-, Sechs-, Sieben- oder Achteck ergeben. Der schnellste Weg führt über die Winkel.</p>' +
+      '<div class="angle-table">' +
+      rows.map((r) => '<div class="angle-card">' + cornerDemo(r[0]) + '<span class="angle-name">' + T().SHAPES[r[0]].name + '</span><span class="angle-val">' + r[1] + '</span><span class="angle-help">' + r[2] + "</span></div>").join("") +
+      "</div>" +
+      '<ol class="tips-steps">' +
+      "<li><strong>Echte Ecken suchen.</strong> Jede Ecke der Gesamtfigur liegt unverändert an einem Teil. Ecken, die durch Schnitte entstehen, passen beim Zusammensetzen zu 180° (an einer Außenkante) oder 360° (im Inneren) zusammen.</li>" +
+      "<li><strong>Winkel schätzen.</strong> Vergleiche mit einem rechten Winkel (Blattecke). Je stumpfer die Ecken der Figur, desto mehr Ecken hat sie. Formel: (n − 2) · 180° ÷ n.</li>" +
+      "<li><strong>Merkhilfen.</strong> 120° kennst du von Bienenwaben, 135° vom Stoppschild. 108° ist nur wenig stumpfer als ein rechter Winkel.</li>" +
+      "<li><strong>Außenkanten zählen.</strong> Bei regelmäßigen Vielecken sind alle Außenkanten gleich lang. Zähle sie über alle Teile. Eine Kante kann durch einen Schnitt auf zwei Teile verteilt sein.</li>" +
+      "<li><strong>Rundungen beachten.</strong> Gebogene Kanten bedeuten Kreis, Halbkreis, Viertelkreis oder Ellipse. Ein rechter Winkel neben einem Bogen spricht für Halb- oder Viertelkreis.</li>" +
+      "<li><strong>Im Übungsmodus prüfen.</strong> Schalte „Winkel“ ein. Orange markierte Zahlen sind echte Ecken der Gesamtfigur.</li>" +
+      "</ol></div>"
+    );
+  }
+
+  function angleHint(task) {
+    const s = T().SHAPES[task.key];
+    const dat = s.acc.replace(/^einen /, "einem ").replace(/^ein /, "einem ").replace(/^eine /, "einer ");
+    if (s.angle) return "Jede Ecke der Figur hat " + s.angle + ", das passt zu " + dat + " mit " + s.corners + " Ecken.";
+    return "Erkennungsmerkmal von " + s.acc.replace(/^(ein|eine|einen) /, "") + ": " + s.note + ".";
+  }
 
   function shapeSvg(key) {
     const pts = T().NORMALIZED[key];
@@ -52,15 +96,22 @@
     });
   }
 
-  function toolsHtml(withSnap, snapOn) {
+  function chipsHtml(o) {
+    return (
+      '<div class="chip-row">' +
+      '<button type="button" class="chip-btn is-toggle" data-act="angles" aria-pressed="' + (o.angles ? "true" : "false") + '">' + ICON.angle + "Winkel</button>" +
+      (o.withSnap ? '<button type="button" class="chip-btn is-toggle" data-act="snap" aria-pressed="' + (o.snap ? "true" : "false") + '">' + ICON.magnet + "Einrasten</button>" : "") +
+      '<button type="button" class="chip-btn" data-act="tips">' + ICON.bulb + "Tipps</button>" +
+      "</div>"
+    );
+  }
+
+  function toolsHtml() {
     return (
       '<div class="tools" role="toolbar" aria-label="Werkzeuge">' +
       '<button class="tool" type="button" data-act="rotl" aria-label="Ausgewähltes Teil 15 Grad nach links drehen">' + ICON.rotL + "<span>15°</span></button>" +
       '<button class="tool" type="button" data-act="rotr" aria-label="Ausgewähltes Teil 15 Grad nach rechts drehen">' + ICON.rotR + "<span>15°</span></button>" +
       '<button class="tool" type="button" data-act="shuffle">' + ICON.shuffle + "<span>Mischen</span></button>" +
-      (withSnap
-        ? '<button class="tool toggle" type="button" data-act="snap" aria-pressed="' + (snapOn ? "true" : "false") + '">' + ICON.magnet + "<span>Einrasten</span></button>"
-        : "") +
       '<button class="tool" type="button" data-act="solve">' + ICON.eye + "<span>Lösung</span></button>" +
       "</div>"
     );
@@ -82,6 +133,8 @@
   function practice(root, app) {
     let count = MT.store.get("fig.count", 4);
     let snapOn = MT.store.get("fig.snap", true);
+    let anglesOn = MT.store.get("fig.angles", false);
+    let focus = MT.store.get("fig.focus", false);
     let task, board, answered;
     const session = { done: 0, correct: 0 };
 
@@ -91,9 +144,14 @@
       '<div class="seg" role="radiogroup" aria-label="Anzahl der Teile">' +
       [3, 4, 5, 6].map((n) => '<button type="button" role="radio" data-count="' + n + '">' + n + " Teile</button>").join("") +
       "</div>" +
+      '<div class="seg" role="radiogroup" aria-label="Formen">' +
+      '<button type="button" role="radio" data-focus="0">Alle Formen</button>' +
+      '<button type="button" role="radio" data-focus="1">5- bis 8-Ecke</button>' +
+      "</div>" +
+      chipsHtml({ angles: anglesOn, snap: snapOn, withSnap: true }) +
       '<section class="board-card"><div class="board-wrap" id="board"></div>' +
       '<p class="board-hint" id="hint">' + HINT_DEFAULT + "</p></section>" +
-      toolsHtml(true, snapOn) +
+      toolsHtml() +
       '<section class="question"><h2>Welche Figur ergeben die Teile?</h2><div class="options" id="options"></div></section>' +
       '<div class="feedback" id="feedback" role="status" aria-live="polite" hidden></div>' +
       '<button class="btn primary wide" type="button" data-act="next">Nächste Aufgabe</button>' +
@@ -117,15 +175,19 @@
       root.querySelectorAll("[data-count]").forEach((b) => {
         b.setAttribute("aria-checked", Number(b.getAttribute("data-count")) === count ? "true" : "false");
       });
+      root.querySelectorAll("[data-focus]").forEach((b) => {
+        b.setAttribute("aria-checked", (b.getAttribute("data-focus") === "1") === focus ? "true" : "false");
+      });
     }
 
     function newTask() {
-      task = T().makeTask(count);
+      task = T().makeTask(count, { focus });
       answered = false;
       if (board) board.destroy();
       board = MT.createFigurenBoard($("#board"), task, {
         interactive: true,
         snap: snapOn,
+        showAngles: anglesOn,
         onComplete: () => setHint("Zusammengesetzt. Vergleiche jetzt mit den Antworten.", "ok"),
         onSelect: (i) => {
           if (i >= 0 && !board.isComplete()) setHint(HINT_DEFAULT);
@@ -154,7 +216,8 @@
       fb.innerHTML =
         "<strong>" + (ok ? "Richtig." : "Leider falsch.") + "</strong> " +
         "Lösung: " + correctText(task) + "." +
-        (board.isComplete() ? "" : ' <button type="button" class="link-btn" data-act="solve">Zusammensetzen ansehen</button>');
+        '<p class="angle-hint">' + angleHint(task) + "</p>" +
+        (board.isComplete() ? "" : '<button type="button" class="link-btn" data-act="solve">Zusammensetzen ansehen</button>');
       updateMeta();
     }
 
@@ -166,6 +229,18 @@
         count = Number(btn.getAttribute("data-count"));
         MT.store.set("fig.count", count);
         newTask();
+      } else if (btn.hasAttribute("data-focus")) {
+        focus = btn.getAttribute("data-focus") === "1";
+        MT.store.set("fig.focus", focus);
+        newTask();
+      } else if (act === "angles") {
+        anglesOn = !anglesOn;
+        MT.store.set("fig.angles", anglesOn);
+        btn.setAttribute("aria-pressed", anglesOn ? "true" : "false");
+        board.setShowAngles(anglesOn);
+        setHint(anglesOn ? "Orange Zahlen sind echte Ecken der Gesamtfigur." : HINT_DEFAULT);
+      } else if (act === "tips") {
+        app.sheet("Winkel und Ecken erkennen", tipsHtml());
       } else if (btn.hasAttribute("data-opt")) {
         answer(Number(btn.getAttribute("data-opt")));
       } else if (act === "home") {
@@ -186,7 +261,7 @@
         setHint(snapOn ? "Einrasten an: passende Kanten ziehen sich an." : "Einrasten aus: Teile genau selbst anlegen.");
       } else if (act === "solve") {
         board.showSolution(() =>
-          setHint("So passen die Teile zusammen: " + T().SHAPES[task.key].acc + ".", "ok")
+          setHint("So passen die Teile zusammen: " + T().SHAPES[task.key].acc + ". " + angleHint(task), "ok")
         );
         const link = root.querySelector("#feedback .link-btn");
         if (link) link.remove();
@@ -212,6 +287,7 @@
     let board = null;
     let timer = null;
     let finished = false;
+    let reviewAngles = false;
 
     function remaining() {
       return (endAt - Date.now()) / 1000;
@@ -364,11 +440,12 @@
         '<main class="screen">' +
         '<section class="board-card"><div class="board-wrap" id="board"></div>' +
         '<p class="board-hint" id="hint">' + HINT_DEFAULT + "</p></section>" +
-        toolsHtml(false) +
+        chipsHtml({ angles: reviewAngles }) +
+        toolsHtml() +
         '<section class="question"><h2>Deine Antwort</h2><div class="options" id="options"></div></section>' +
         '<div class="feedback ' + (chosen === task.correct ? "is-ok" : "is-bad") + '" role="status">' +
         "<strong>" + (chosen == null ? "Nicht beantwortet." : chosen === task.correct ? "Richtig." : "Falsch.") + "</strong> " +
-        "Lösung: " + correctText(task) + ".</div>" +
+        "Lösung: " + correctText(task) + '.<p class="angle-hint">' + angleHint(task) + "</p></div>" +
         '<div class="sim-nav"><button class="btn" type="button" data-act="results">Zur Auswertung</button>' +
         (i < SIM_COUNT - 1 ? '<button class="btn primary" type="button" data-act="next-review">Nächste Aufgabe</button>' : "") +
         "</div></main>";
@@ -376,6 +453,7 @@
       board = MT.createFigurenBoard(root.querySelector("#board"), task, {
         interactive: true,
         snap: true,
+        showAngles: reviewAngles,
         onComplete: () => {
           const h = root.querySelector("#hint");
           if (h) { h.textContent = "Zusammengesetzt."; h.className = "board-hint is-ok"; }
@@ -394,6 +472,11 @@
         else if (act === "rotl" || act === "rotr") board.rotateSelected(act === "rotl" ? -15 : 15);
         else if (act === "shuffle") board.reshuffle();
         else if (act === "solve") board.showSolution();
+        else if (act === "angles") {
+          reviewAngles = !reviewAngles;
+          btn.setAttribute("aria-pressed", reviewAngles ? "true" : "false");
+          board.setShowAngles(reviewAngles);
+        } else if (act === "tips") app.sheet("Winkel und Ecken erkennen", tipsHtml());
       };
       window.scrollTo(0, 0);
     }
@@ -412,5 +495,5 @@
     };
   }
 
-  MT.figurenViews = { practice, simulation, shapeSvg };
+  MT.figurenViews = { practice, simulation, shapeSvg, tipsHtml };
 })();

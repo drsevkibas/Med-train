@@ -28,19 +28,19 @@
 
   // Alle Grundformen sind konvex, damit die Schnitte sauber bleiben.
   const SHAPES = {
-    dreieck: { name: "Dreieck", acc: "ein Dreieck", make: () => ngon(3, -90) },
-    quadrat: { name: "Quadrat", acc: "ein Quadrat", make: () => ngon(4, -45) },
-    rechteck: { name: "Rechteck", acc: "ein Rechteck", make: () => [[-1, -0.58], [1, -0.58], [1, 0.58], [-1, 0.58]] },
-    trapez: { name: "Trapez", acc: "ein Trapez", make: () => [[-1, 0.55], [1, 0.55], [0.48, -0.55], [-0.48, -0.55]] },
-    parallelogramm: { name: "Parallelogramm", acc: "ein Parallelogramm", make: () => [[-1, 0.5], [0.42, 0.5], [1, -0.5], [-0.42, -0.5]] },
-    fuenfeck: { name: "Fünfeck", acc: "ein Fünfeck", make: () => ngon(5, -90) },
-    sechseck: { name: "Sechseck", acc: "ein Sechseck", make: () => ngon(6, 0) },
-    siebeneck: { name: "Siebeneck", acc: "ein Siebeneck", make: () => ngon(7, -90) },
-    achteck: { name: "Achteck", acc: "ein Achteck", make: () => ngon(8, 22.5) },
-    kreis: { name: "Kreis", acc: "einen Kreis", make: () => ngon(72, 0) },
-    halbkreis: { name: "Halbkreis", acc: "einen Halbkreis", make: () => arc(180, 360, 36) },
-    viertelkreis: { name: "Viertelkreis", acc: "einen Viertelkreis", make: () => [[0, 0]].concat(arc(180, 270, 24)) },
-    ellipse: { name: "Ellipse", acc: "eine Ellipse", make: () => ngon(72, 0).map((p) => [p[0], p[1] * 0.62]) },
+    dreieck: { name: "Dreieck", acc: "ein Dreieck", corners: 3, angle: "60°", make: () => ngon(3, -90) },
+    quadrat: { name: "Quadrat", acc: "ein Quadrat", corners: 4, angle: "90°", make: () => ngon(4, -45) },
+    rechteck: { name: "Rechteck", acc: "ein Rechteck", corners: 4, angle: "90°", make: () => [[-1, -0.58], [1, -0.58], [1, 0.58], [-1, 0.58]] },
+    trapez: { name: "Trapez", acc: "ein Trapez", corners: 4, note: "zwei spitze und zwei stumpfe Ecken, eine Seite deutlich länger", make: () => [[-1, 0.55], [1, 0.55], [0.48, -0.55], [-0.48, -0.55]] },
+    parallelogramm: { name: "Parallelogramm", acc: "ein Parallelogramm", corners: 4, note: "je zwei gegenüberliegende Ecken gleich: zwei spitze, zwei stumpfe", make: () => [[-1, 0.5], [0.42, 0.5], [1, -0.5], [-0.42, -0.5]] },
+    fuenfeck: { name: "Fünfeck", acc: "ein Fünfeck", corners: 5, angle: "108°", make: () => ngon(5, -90) },
+    sechseck: { name: "Sechseck", acc: "ein Sechseck", corners: 6, angle: "120°", make: () => ngon(6, 0) },
+    siebeneck: { name: "Siebeneck", acc: "ein Siebeneck", corners: 7, angle: "≈ 128,6°", make: () => ngon(7, -90) },
+    achteck: { name: "Achteck", acc: "ein Achteck", corners: 8, angle: "135°", make: () => ngon(8, 22.5) },
+    kreis: { name: "Kreis", acc: "einen Kreis", corners: 0, note: "nur gebogene Außenkanten, keine Ecken", make: () => ngon(72, 0) },
+    halbkreis: { name: "Halbkreis", acc: "einen Halbkreis", corners: 2, note: "eine gerade und eine gebogene Kante, zwei rechte Winkel", make: () => arc(180, 360, 36) },
+    viertelkreis: { name: "Viertelkreis", acc: "einen Viertelkreis", corners: 3, note: "zwei gerade Kanten im rechten Winkel und ein Bogen", make: () => [[0, 0]].concat(arc(180, 270, 24)) },
+    ellipse: { name: "Ellipse", acc: "eine Ellipse", corners: 0, note: "nur gebogene Kanten, aber unterschiedlich stark gekrümmt", make: () => ngon(72, 0).map((p) => [p[0], p[1] * 0.62]) },
   };
 
   // Ähnliche Formen dienen als Ablenker, damit die Auswahl nicht zu leicht ist.
@@ -115,6 +115,19 @@
     return null;
   }
 
+  const POLYGONS = ["fuenfeck", "sechseck", "siebeneck", "achteck"];
+
+  /** Innenwinkel jeder Ecke eines konvexen Polygons (Grad) */
+  function vertexAngles(poly) {
+    const n = poly.length;
+    return poly.map((v, i) => {
+      const a = poly[(i - 1 + n) % n], b = poly[(i + 1) % n];
+      const u = [a[0] - v[0], a[1] - v[1]], w = [b[0] - v[0], b[1] - v[1]];
+      const cos = (u[0] * w[0] + u[1] * w[1]) / (Math.hypot(u[0], u[1]) * Math.hypot(w[0], w[1]));
+      return (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI;
+    });
+  }
+
   function scatter(pieces) {
     const { W, H } = BOARD;
     const placed = [];
@@ -143,7 +156,16 @@
     scatter(task.pieces);
   }
 
-  function makeOptions(key) {
+  function makeOptions(key, focus) {
+    if (focus) {
+      // wie in der Prüfung: Fünf-, Sechs-, Sieben- oder Achteck
+      if (Math.random() < 0.15) {
+        const opts = shuffle(POLYGONS.filter((k) => k !== key).concat(["quadrat"]));
+        return { options: opts, correct: 4 };
+      }
+      const opts = shuffle(POLYGONS);
+      return { options: opts, correct: opts.indexOf(key) };
+    }
     const noneCorrect = Math.random() < 0.2;
     const others = Object.keys(SHAPES).filter((k) => k !== key);
     const similar = shuffle(SIMILAR[key] || []);
@@ -158,21 +180,29 @@
   }
 
   /** Erzeugt eine Aufgabe mit `count` Teilen (3–6). */
-  function makeTask(count) {
+  function makeTask(count, opts) {
+    const focus = !!(opts && opts.focus);
     const { R, CX, CY } = BOARD;
-    const keys = Object.keys(SHAPES);
+    const keys = focus ? POLYGONS : Object.keys(SHAPES);
     for (let attempt = 0; attempt < 30; attempt++) {
       const key = pick(keys);
       const polys = cutShape(NORMALIZED[key], count);
       if (!polys) continue;
+      const orig = NORMALIZED[key];
       const pieces = polys.map((poly) => {
         const c = G.centroid(poly);
         const local = poly.map((q) => [(q[0] - c[0]) * R, (q[1] - c[1]) * R]);
-        return { local, tx: CX + c[0] * R, ty: CY + c[1] * R, r: G.radius(local), pose: null };
+        const angles = vertexAngles(poly);
+        // Ecke der Gesamtfigur = Punkt liegt auf einer Ecke der Grundform
+        const vtx = poly.map((q, i) => ({
+          a: angles[i],
+          corner: orig.some((o) => Math.hypot(o[0] - q[0], o[1] - q[1]) < 1e-6),
+        }));
+        return { local, vtx, tx: CX + c[0] * R, ty: CY + c[1] * R, r: G.radius(local), pose: null };
       });
-      const task = { key, count, pieces };
+      const task = { key, count, pieces, focus };
       scatter(pieces);
-      Object.assign(task, makeOptions(key));
+      Object.assign(task, makeOptions(key, focus));
       return task;
     }
     throw new Error("Aufgabe konnte nicht erzeugt werden");
@@ -184,6 +214,7 @@
     NORMALIZED,
     makeTask,
     scatterPieces,
+    POLYGONS,
     letter: (i) => "ABCDE"[i],
   };
 })();

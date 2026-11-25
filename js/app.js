@@ -13,6 +13,7 @@
     back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
     play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>',
     clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    bulb: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/></svg>',
     calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
   };
 
@@ -24,7 +25,8 @@
       short: "Figuren",
       format: "15 Aufgaben · 20 Min.",
       text: "Aus mehreren Einzelteilen die richtige Gesamtfigur erkennen. Im Übungsmodus kannst du die Teile verschieben und drehen, um die Lösung nachzuvollziehen.",
-      practice: { route: "figuren-uebung", note: "Teile bewegen, 3 bis 6 Teile, mit Lösung" },
+      practice: { route: "figuren-uebung", note: "Teile bewegen, Winkel anzeigen, mit Lösung" },
+      tips: { title: "Winkel und Ecken erkennen", note: "So unterscheidest du 5-, 6-, 7- und 8-Ecke", html: () => MT.figurenViews.tipsHtml() },
       sim: { route: "figuren-sim", note: "15 Aufgaben in 20 Minuten, Teile fix" },
     },
     {
@@ -148,7 +150,32 @@
     });
   }
 
-  const app = { go, confirm: confirmDialog };
+  /** Blatt von unten mit Inhalt (z. B. Tipps). */
+  function sheet(title, html) {
+    const wrap = document.createElement("div");
+    wrap.className = "sheet-backdrop";
+    wrap.innerHTML =
+      '<section class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">' +
+      '<header class="sheet-head"><h2 id="sheet-title"></h2>' +
+      '<button type="button" class="sheet-close" data-close aria-label="Schließen">Fertig</button></header>' +
+      '<div class="sheet-body">' + html + "</div></section>";
+    wrap.querySelector("#sheet-title").textContent = title;
+    function close() {
+      wrap.remove();
+      document.removeEventListener("keydown", onKey);
+      document.documentElement.classList.remove("no-scroll");
+    }
+    function onKey(e) { if (e.key === "Escape") close(); }
+    wrap.addEventListener("click", (e) => {
+      if (e.target === wrap || e.target.closest("[data-close]")) close();
+    });
+    document.addEventListener("keydown", onKey);
+    document.documentElement.classList.add("no-scroll");
+    document.body.append(wrap);
+    wrap.querySelector(".sheet-close").focus();
+  }
+
+  const app = { go, confirm: confirmDialog, sheet };
 
   /* ---------- Helfer ---------- */
   const rate = (s) => (s.total ? s.correct / s.total : null);
@@ -292,9 +319,18 @@
       '<span class="mode-icon">' + ICONS.clock + "</span>" +
       '<span class="mode-body"><span class="mode-title">Prüfungssimulation</span><span class="mode-note">' + m.sim.note + "</span></span>" +
       '<span class="cell-chevron">' + ICONS.chevron + "</span></a>" +
+      (m.tips
+        ? '<button type="button" class="mode" data-act="tips">' +
+          '<span class="mode-icon">' + ICONS.bulb + "</span>" +
+          '<span class="mode-body"><span class="mode-title">Tipps und Strategie</span><span class="mode-note">' + m.tips.note + "</span></span>" +
+          '<span class="cell-chevron">' + ICONS.chevron + "</span></button>"
+        : "") +
       "</div>" +
       "</main>";
     bindGo(root);
+    root.addEventListener("click", (e) => {
+      if (e.target.closest('[data-act="tips"]') && m.tips) sheet(m.tips.title, m.tips.html());
+    });
     return null;
   }
 
