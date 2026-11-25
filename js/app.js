@@ -1,50 +1,72 @@
-/* App-Rahmen: Übersicht, Navigation, Dialog. */
+/* App-Rahmen: Übersicht, Detailseiten der Untertests, Navigation, Dialog. */
 (function () {
   "use strict";
   const MT = (window.MT = window.MT || {});
 
+  const ICONS = {
+    figuren: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z"/><path d="M12 3v9l7.8 4.5M12 12l-7.8 4.5"/></svg>',
+    gedaechtnis: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.5" cy="10.5" r="2"/><path d="M5.5 16c.6-1.8 1.7-2.6 3-2.6s2.4.8 3 2.6M14.5 10h4M14.5 14h3"/></svg>',
+    zahlenfolgen: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17l5-5 3.5 3.5L20 8"/><path d="M15 8h5v5"/></svg>',
+    wortfluessigkeit: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="8" height="12" rx="2"/><rect x="13" y="6" width="8" height="12" rx="2"/><path d="M5.5 15l1.5-6 1.5 6M6 13.2h2M15.5 9h1.8a1.5 1.5 0 0 1 0 3h-1.8zm0 3h2.1a1.5 1.5 0 0 1 0 3h-2.1z"/></svg>',
+    implikationen: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="12" r="5.5"/><circle cx="15" cy="12" r="5.5"/></svg>',
+    chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>',
+    back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10-6.5z"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    calendar: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  };
+
   const MODULES = [
     {
       id: "figuren",
+      simTotal: 15,
       title: "Figuren zusammensetzen",
-      format: "15 Aufgaben · 20 Minuten",
-      text: "Aus Einzelteilen die richtige Figur erkennen. Im Übungsmodus kannst du die Teile verschieben und drehen.",
-      art: () => MT.figurenViews.shapeSvg("sechseck"),
-      actions: [["Üben", "figuren-uebung"], ["Simulation", "figuren-sim"]],
+      short: "Figuren",
+      format: "15 Aufgaben · 20 Min.",
+      text: "Aus mehreren Einzelteilen die richtige Gesamtfigur erkennen. Im Übungsmodus kannst du die Teile verschieben und drehen, um die Lösung nachzuvollziehen.",
+      practice: { route: "figuren-uebung", note: "Teile bewegen, 3 bis 6 Teile, mit Lösung" },
+      sim: { route: "figuren-sim", note: "15 Aufgaben in 20 Minuten, Teile fix" },
     },
     {
       id: "gedaechtnis",
       title: "Gedächtnis und Merkfähigkeit",
-      format: "8 Allergieausweise",
-      text: "Ausweise einprägen und danach Fragen zu Foto, Name, Blutgruppe, Allergien und mehr beantworten.",
-      art: () => '<svg viewBox="0 0 40 40"><rect class="art-line" x="5" y="9" width="30" height="22" rx="3"/><circle class="art-fill" cx="14" cy="18" r="3.5"/><path class="art-fill" d="M8.5 27c.8-3.2 3-4.6 5.5-4.6s4.7 1.4 5.5 4.6z"/><path class="art-line" d="M23 16h8M23 21h8M23 26h5"/></svg>',
-      actions: [["Starten", "gedaechtnis"]],
+      short: "Allergieausweise",
+      format: "8 Ausweise · Abfrage später",
+      text: "Acht Allergieausweise einprägen und danach Fragen zu Foto, Name, Geburtstag, Medikamenten, Blutgruppe, Allergien, Nummer und Land beantworten.",
+      direct: "gedaechtnis",
     },
     {
       id: "zahlenfolgen",
+      simTotal: 10,
       title: "Zahlenfolgen",
-      format: "10 Aufgaben · 15 Minuten",
-      text: "Die Regel hinter einer Zahlenfolge erkennen und die zwei fehlenden Zahlen bestimmen.",
-      art: () => '<span class="art-text">2·4·8</span>',
-      actions: [["Üben", "zahlen-uebung"], ["Simulation", "zahlen-sim"]],
+      short: "Zahlenfolgen",
+      format: "10 Aufgaben · 15 Min.",
+      text: "Die Regel hinter einer Zahlenfolge erkennen und die beiden fehlenden Zahlen am Ende bestimmen.",
+      practice: { route: "zahlen-uebung", note: "Unbegrenzt, mit Rechenweg" },
+      sim: { route: "zahlen-sim", note: "10 Aufgaben in 15 Minuten" },
     },
     {
       id: "wortfluessigkeit",
+      simTotal: 15,
       title: "Wortflüssigkeit",
-      format: "15 Aufgaben · 20 Minuten",
-      text: "Aus vertauschten Buchstaben das Wort erkennen und seinen Anfangsbuchstaben wählen.",
-      art: () => '<span class="art-text">ZTSRE</span>',
-      actions: [["Üben", "wort-uebung"], ["Simulation", "wort-sim"]],
+      short: "Wortflüssigkeit",
+      format: "15 Aufgaben · 20 Min.",
+      text: "Aus vertauschten Buchstaben das gesuchte Hauptwort erkennen und seinen Anfangsbuchstaben wählen.",
+      practice: { route: "wort-uebung", note: "Unbegrenzt, mit Lösungswort" },
+      sim: { route: "wort-sim", note: "15 Aufgaben in 20 Minuten" },
     },
     {
       id: "implikationen",
+      simTotal: 10,
       title: "Implikationen erkennen",
-      format: "10 Aufgaben · 10 Minuten",
-      text: "Aus zwei Aussagen ableiten, welche Schlussfolgerung zwingend stimmt.",
-      art: () => '<span class="art-text is-big">⇒</span>',
-      actions: [["Üben", "impl-uebung"], ["Simulation", "impl-sim"]],
+      short: "Implikationen",
+      format: "10 Aufgaben · 10 Min.",
+      text: "Aus zwei Aussagen ableiten, welche Schlussfolgerung zwingend richtig ist.",
+      practice: { route: "impl-uebung", note: "Unbegrenzt, mit Begründung" },
+      sim: { route: "impl-sim", note: "10 Aufgaben in 10 Minuten" },
     },
   ];
+  const byId = Object.fromEntries(MODULES.map((m) => [m.id, m]));
 
   const ROUTES = {
     home: homeView,
@@ -58,16 +80,29 @@
     "impl-uebung": (root, app) => MT.quiz.practice(root, app, MT.implikationen),
     "impl-sim": (root, app) => MT.quiz.simulation(root, app, MT.implikationen, { againRoute: "impl-sim" }),
   };
+  // Detailseiten
+  const PARENT = {};
+  for (const m of MODULES) {
+    if (m.direct) continue;
+    ROUTES["modul-" + m.id] = (root) => moduleView(root, m);
+    PARENT[m.practice.route] = "modul-" + m.id;
+    PARENT[m.sim.route] = "modul-" + m.id;
+  }
 
   const appEl = document.getElementById("app");
   let current = null;
+  let currentName = null;
 
   function go(name, opts) {
+    // „Zurück“ aus Übung/Simulation führt zur Detailseite des Untertests
+    if (name === "home" && !(opts && opts.fromHash) && PARENT[currentName]) name = PARENT[currentName];
     if (!ROUTES[name]) name = "home";
     if (current && current.destroy) current.destroy();
     const view = document.createElement("div");
     view.className = "view";
     appEl.replaceChildren(view);
+    currentName = name;
+    document.body.classList.toggle("is-home", name === "home");
     current = ROUTES[name](view, app) || null;
     window.scrollTo(0, 0);
     const hash = name === "home" ? "" : "#" + name;
@@ -115,19 +150,9 @@
 
   const app = { go, confirm: confirmDialog };
 
-  function pct(correct, total) {
-    return total ? Math.round((correct / total) * 100) + " %" : "–";
-  }
-
-  function ring(value) {
-    // Fortschrittsring für die Trefferquote (0..1, oder null = noch nichts geübt)
-    const r = 15, c = 2 * Math.PI * r;
-    const v = value == null ? 0 : Math.max(0, Math.min(1, value));
-    return '<svg class="ring" viewBox="0 0 40 40" aria-hidden="true">' +
-      '<circle class="ring-track" cx="20" cy="20" r="' + r + '"/>' +
-      '<circle class="ring-val" cx="20" cy="20" r="' + r + '" stroke-dasharray="' + (v * c).toFixed(1) + " " + c.toFixed(1) + '"/>' +
-      "</svg>";
-  }
+  /* ---------- Helfer ---------- */
+  const rate = (s) => (s.total ? s.correct / s.total : null);
+  const pctText = (v) => (v == null ? "–" : Math.round(v * 100) + " %");
 
   function daysUntil(iso) {
     if (!iso) return null;
@@ -138,100 +163,142 @@
     return Math.round((Date.UTC(y, m - 1, d) - today) / 86400000);
   }
 
-  function countdownHtml() {
+  function fmtDate(iso) {
+    const [y, m, d] = iso.split("-").map(Number);
+    const months = ["Jänner", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+    return d + ". " + months[m - 1] + " " + y;
+  }
+
+  function examRow() {
     const iso = MT.store.get("exam.date", "");
     const days = daysUntil(iso);
-    let text;
-    if (days == null) text = "Trag dein Testdatum ein, dann zählen wir mit.";
-    else if (days > 1) text = "Noch <strong>" + days + "</strong> Tage bis zum Test.";
-    else if (days === 1) text = "<strong>Morgen</strong> ist Testtag. Viel Erfolg!";
-    else if (days === 0) text = "<strong>Heute</strong> ist Testtag. Viel Erfolg!";
-    else text = "Dein Testdatum liegt in der Vergangenheit.";
+    let main, sub;
+    if (days == null) { main = "Testtermin festlegen"; sub = "Dann siehst du, wie viele Tage bleiben."; }
+    else if (days > 1) { main = days + " Tage bis zum Test"; sub = fmtDate(iso); }
+    else if (days === 1) { main = "Morgen ist Testtag"; sub = fmtDate(iso); }
+    else if (days === 0) { main = "Heute ist Testtag"; sub = "Viel Erfolg!"; }
+    else { main = "Testtermin vorbei"; sub = fmtDate(iso); }
     return (
-      '<div class="countdown">' +
-      '<span class="countdown-text">' + text + "</span>" +
-      '<label class="countdown-edit"><span class="sr-only">Testdatum</span>' +
-      '<input type="date" id="exam-date" value="' + (iso || "") + '">' +
-      "<span aria-hidden=\"true\">" + (iso ? "Ändern" : "Datum") + "</span></label>" +
-      "</div>"
+      '<label class="exam-row" id="exam-row">' +
+      '<span class="exam-icon">' + ICONS.calendar + "</span>" +
+      '<span class="exam-text"><span class="exam-main">' + main + '</span><span class="exam-sub">' + sub + "</span></span>" +
+      '<span class="exam-action">' + (iso ? "Ändern" : "Festlegen") + "</span>" +
+      '<input type="date" id="exam-date" aria-label="Testtermin" value="' + (iso || "") + '">' +
+      "</label>"
     );
   }
 
-  function greeting() {
-    const h = new Date().getHours();
-    return h < 11 ? "Guten Morgen." : h < 18 ? "Schön, dass du da bist." : "Guten Abend.";
+  function brandMark() {
+    return (
+      '<svg viewBox="0 0 48 48" aria-hidden="true"><polygon class="bm-a" points="24,4 41.3,14 41.3,24 24,24 6.7,24 6.7,14"/>' +
+      '<polygon class="bm-b" points="6.7,24 24,24 24,44 6.7,34"/>' +
+      '<polygon class="bm-c" points="27,27 44.3,27 44.3,37 27,47"/></svg>'
+    );
   }
 
-  function homeView(root) {
-    const all = MODULES.map((m) => MT.stats.load(m.id));
-    const sum = (k) => all.reduce((n, s) => n + s[k], 0);
-    const pending = MT.gedaechtnis.hasPending();
-    root.innerHTML =
-      '<header class="home-head">' +
-      '<div class="brand"><span class="brand-mark" aria-hidden="true">' + brandMark() + "</span>" +
-      '<span class="brand-name">KFF Trainer</span></div>' +
-      "</header>" +
-      '<section class="hero">' +
-      '<p class="hero-eyebrow">' + greeting() + "</p>" +
-      '<h1 class="hero-title">Trainiere den <mark>kognitiven Teil</mark> des MedAT.</h1>' +
-      countdownHtml() +
-      "</section>" +
-      '<main class="screen">' +
-      (pending
-        ? '<section class="notice"><div><strong>Abfrage wartet.</strong> Du hast um ' + MT.gedaechtnis.pendingTime() +
-          " Uhr Allergieausweise gelernt.</div>" +
-          '<a class="btn primary" href="#gedaechtnis" data-go="gedaechtnis">Zur Abfrage</a></section>'
-        : "") +
-      '<section class="stat-row" aria-label="Deine Statistik">' +
-      '<div class="stat"><span class="stat-val">' + sum("dayCount") + '</span><span class="stat-label">heute gelöst</span></div>' +
-      '<div class="stat"><span class="stat-val">' + pct(sum("correct"), sum("total")) + '</span><span class="stat-label">Trefferquote</span></div>' +
-      '<div class="stat"><span class="stat-val">' + sum("total") + '</span><span class="stat-label">insgesamt</span></div>' +
-      "</section>" +
-      '<h2 class="section-title">Untertests</h2>' +
-      '<div class="modules">' +
-      MODULES.map((m, i) => {
-        const s = all[i];
-        const rate = s.total ? s.correct / s.total : null;
-        return '<article class="module">' +
-          '<div class="module-head">' +
-          '<div class="module-art" aria-hidden="true">' + m.art() + "</div>" +
-          '<div class="module-title"><h3>' + m.title + "</h3>" +
-          '<p class="module-format">' + m.format + "</p></div>" +
-          '<div class="module-ring" title="Trefferquote">' + ring(rate) +
-          '<span class="module-ring-val">' + (s.total ? Math.round(rate * 100) : "–") + "</span></div>" +
-          "</div>" +
-          '<p class="module-text">' + m.text + "</p>" +
-          '<div class="module-actions">' +
-          m.actions.map((a, k) => '<a class="btn' + (k === 0 ? " primary" : "") + '" href="#' + a[1] + '" data-go="' + a[1] + '">' + a[0] + "</a>").join("") +
-          "</div></article>";
-      }).join("") +
-      "</div>" +
-      '<p class="footnote">Aufgabenanzahl und Zeiten orientieren sich am bisherigen MedAT-Format. Prüfe das aktuelle Format auf der offiziellen MedAT-Seite. ' +
-      "Unabhängiges Übungsprojekt, nicht offiziell und nicht mit den Medizinischen Universitäten verbunden. Deine Ergebnisse werden nur auf diesem Gerät gespeichert.</p>" +
-      "</main>";
+  function bindGo(root) {
     root.addEventListener("click", (e) => {
       const a = e.target.closest("[data-go]");
       if (!a) return;
       e.preventDefault();
       go(a.getAttribute("data-go"));
     });
+  }
+
+  /* ---------- Übersicht ---------- */
+  function homeView(root) {
+    const all = MODULES.map((m) => MT.stats.load(m.id));
+    const sum = (k) => all.reduce((n, s) => n + s[k], 0);
+    const overall = sum("total") ? sum("correct") / sum("total") : null;
+    const pending = MT.gedaechtnis.hasPending();
+
+    root.innerHTML =
+      '<header class="app-header">' +
+      '<div class="app-header-inner">' +
+      '<div class="brand"><span class="brand-mark">' + brandMark() + '</span><span class="brand-name">KFF Trainer</span></div>' +
+      '<h1 class="app-title">Dein Training</h1>' +
+      '<p class="app-sub">MedAT · Kognitive Fähigkeiten und Fertigkeiten</p>' +
+      '<section class="summary" aria-label="Deine Statistik">' +
+      '<div class="summary-stats">' +
+      '<div class="kpi"><span class="kpi-val">' + sum("dayCount") + '</span><span class="kpi-label">Heute gelöst</span></div>' +
+      '<div class="kpi"><span class="kpi-val">' + pctText(overall) + '</span><span class="kpi-label">Trefferquote</span></div>' +
+      '<div class="kpi"><span class="kpi-val">' + sum("total") + '</span><span class="kpi-label">Gesamt</span></div>' +
+      "</div>" +
+      examRow() +
+      "</section>" +
+      "</div></header>" +
+      '<main class="screen">' +
+      (pending
+        ? '<a class="notice" href="#gedaechtnis" data-go="gedaechtnis">' +
+          '<span class="notice-dot" aria-hidden="true"></span>' +
+          '<span class="notice-text"><strong>Abfrage bereit</strong><span>Allergieausweise, gelernt um ' + MT.gedaechtnis.pendingTime() + " Uhr</span></span>" +
+          '<span class="cell-chevron">' + ICONS.chevron + "</span></a>"
+        : "") +
+      '<h2 class="section-title">Untertests</h2>' +
+      '<nav class="list" aria-label="Untertests">' +
+      MODULES.map((m, i) => {
+        const s = all[i];
+        const r = rate(s);
+        const target = m.direct || "modul-" + m.id;
+        return '<a class="cell" href="#' + target + '" data-go="' + target + '">' +
+          '<span class="cell-icon">' + ICONS[m.id] + "</span>" +
+          '<span class="cell-body"><span class="cell-title">' + m.title + "</span>" +
+          '<span class="cell-meta">' + m.format + "</span>" +
+          '<span class="progress" aria-hidden="true"><span style="width:' + (r == null ? 0 : Math.round(r * 100)) + '%"></span></span>' +
+          "</span>" +
+          '<span class="cell-side"><span class="cell-rate">' + pctText(r) + "</span>" +
+          '<span class="cell-count">' + (s.total ? s.total + " gelöst" : "neu") + "</span></span>" +
+          '<span class="cell-chevron">' + ICONS.chevron + "</span></a>";
+      }).join("") +
+      "</nav>" +
+      '<p class="footnote">Aufgabenanzahl und Zeiten orientieren sich am bisherigen MedAT-Format. Prüfe das aktuelle Format auf der offiziellen MedAT-Seite. ' +
+      "Unabhängiges Übungsprojekt, nicht mit den Medizinischen Universitäten verbunden. Deine Ergebnisse bleiben auf diesem Gerät.</p>" +
+      "</main>";
+
+    bindGo(root);
     root.addEventListener("change", (e) => {
       if (e.target.id !== "exam-date") return;
       MT.store.set("exam.date", e.target.value || "");
-      const cd = root.querySelector(".countdown");
-      if (cd) cd.outerHTML = countdownHtml();
+      const row = root.querySelector("#exam-row");
+      if (row) row.outerHTML = examRow();
     });
     return null;
   }
 
-  function brandMark() {
-    // Ein Sechseck, in drei Teile geschnitten, ein Teil leicht versetzt
-    return (
-      '<svg viewBox="0 0 48 48"><polygon class="bm-a" points="24,4 41.3,14 41.3,24 24,24 6.7,24 6.7,14"/>' +
-      '<polygon class="bm-b" points="6.7,24 24,24 24,44 6.7,34"/>' +
-      '<polygon class="bm-c" points="27,27 44.3,27 44.3,37 27,47"/></svg>'
-    );
+  /* ---------- Detailseite eines Untertests ---------- */
+  function moduleView(root, m) {
+    const s = MT.stats.load(m.id);
+    root.innerHTML =
+      '<header class="topbar">' +
+      '<button class="icon-btn" type="button" data-go="home" aria-label="Zur Übersicht">' + ICONS.back + "</button>" +
+      '<div class="topbar-title"><span class="eyebrow">Untertest</span><h1>' + m.short + "</h1></div><div></div></header>" +
+      '<main class="screen">' +
+      '<section class="detail-head">' +
+      '<span class="detail-icon">' + ICONS[m.id] + "</span>" +
+      '<h2 class="detail-title">' + m.title + "</h2>" +
+      '<p class="detail-text">' + m.text + "</p>" +
+      "</section>" +
+      '<section class="kpi-row" aria-label="Statistik">' +
+      '<div class="kpi-card"><span class="kpi-val">' + s.total + '</span><span class="kpi-label">gelöst</span></div>' +
+      '<div class="kpi-card"><span class="kpi-val">' + pctText(rate(s)) + '</span><span class="kpi-label">Trefferquote</span></div>' +
+      '<div class="kpi-card"><span class="kpi-val">' + (s.bestSim == null ? "–" : s.bestSim + "/" + m.simTotal) + '</span><span class="kpi-label">beste Simulation</span></div>' +
+      "</section>" +
+      '<div class="mode-list">' +
+      '<a class="mode is-primary" href="#' + m.practice.route + '" data-go="' + m.practice.route + '">' +
+      '<span class="mode-icon">' + ICONS.play + "</span>" +
+      '<span class="mode-body"><span class="mode-title">Übungsmodus</span><span class="mode-note">' + m.practice.note + "</span></span>" +
+      '<span class="cell-chevron">' + ICONS.chevron + "</span></a>" +
+      '<a class="mode" href="#' + m.sim.route + '" data-go="' + m.sim.route + '">' +
+      '<span class="mode-icon">' + ICONS.clock + "</span>" +
+      '<span class="mode-body"><span class="mode-title">Prüfungssimulation</span><span class="mode-note">' + m.sim.note + "</span></span>" +
+      '<span class="cell-chevron">' + ICONS.chevron + "</span></a>" +
+      "</div>" +
+      "</main>";
+    bindGo(root);
+    return null;
   }
+
+  MT.ICONS = ICONS;
 
   window.addEventListener("hashchange", () => {
     const name = location.hash.replace(/^#/, "") || "home";
