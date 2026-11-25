@@ -1,5 +1,5 @@
 /* Service Worker: App offline verfügbar machen. Bei Änderungen VERSION erhöhen. */
-const VERSION = "kff-v2";
+const VERSION = "kff-v3";
 const FILES = [
   "./",
   "index.html",

@@ -17,7 +17,7 @@
       title: "Gedächtnis und Merkfähigkeit",
       format: "8 Allergieausweise",
       text: "Ausweise einprägen und danach Fragen zu Foto, Name, Blutgruppe, Allergien und mehr beantworten.",
-      art: () => '<span class="art-id">ID</span>',
+      art: () => '<svg viewBox="0 0 40 40"><rect class="art-line" x="5" y="9" width="30" height="22" rx="3"/><circle class="art-fill" cx="14" cy="18" r="3.5"/><path class="art-fill" d="M8.5 27c.8-3.2 3-4.6 5.5-4.6s4.7 1.4 5.5 4.6z"/><path class="art-line" d="M23 16h8M23 21h8M23 26h5"/></svg>',
       actions: [["Starten", "gedaechtnis"]],
     },
     {
@@ -25,7 +25,7 @@
       title: "Zahlenfolgen",
       format: "10 Aufgaben · 15 Minuten",
       text: "Die Regel hinter einer Zahlenfolge erkennen und die zwei fehlenden Zahlen bestimmen.",
-      art: () => '<span class="art-text">2 · 4 · 8</span>',
+      art: () => '<span class="art-text">2·4·8</span>',
       actions: [["Üben", "zahlen-uebung"], ["Simulation", "zahlen-sim"]],
     },
     {
@@ -119,6 +119,49 @@
     return total ? Math.round((correct / total) * 100) + " %" : "–";
   }
 
+  function ring(value) {
+    // Fortschrittsring für die Trefferquote (0..1, oder null = noch nichts geübt)
+    const r = 15, c = 2 * Math.PI * r;
+    const v = value == null ? 0 : Math.max(0, Math.min(1, value));
+    return '<svg class="ring" viewBox="0 0 40 40" aria-hidden="true">' +
+      '<circle class="ring-track" cx="20" cy="20" r="' + r + '"/>' +
+      '<circle class="ring-val" cx="20" cy="20" r="' + r + '" stroke-dasharray="' + (v * c).toFixed(1) + " " + c.toFixed(1) + '"/>' +
+      "</svg>";
+  }
+
+  function daysUntil(iso) {
+    if (!iso) return null;
+    const [y, m, d] = iso.split("-").map(Number);
+    if (!y || !m || !d) return null;
+    const now = new Date();
+    const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((Date.UTC(y, m - 1, d) - today) / 86400000);
+  }
+
+  function countdownHtml() {
+    const iso = MT.store.get("exam.date", "");
+    const days = daysUntil(iso);
+    let text;
+    if (days == null) text = "Trag dein Testdatum ein, dann zählen wir mit.";
+    else if (days > 1) text = "Noch <strong>" + days + "</strong> Tage bis zum Test.";
+    else if (days === 1) text = "<strong>Morgen</strong> ist Testtag. Viel Erfolg!";
+    else if (days === 0) text = "<strong>Heute</strong> ist Testtag. Viel Erfolg!";
+    else text = "Dein Testdatum liegt in der Vergangenheit.";
+    return (
+      '<div class="countdown">' +
+      '<span class="countdown-text">' + text + "</span>" +
+      '<label class="countdown-edit"><span class="sr-only">Testdatum</span>' +
+      '<input type="date" id="exam-date" value="' + (iso || "") + '">' +
+      "<span aria-hidden=\"true\">" + (iso ? "Ändern" : "Datum") + "</span></label>" +
+      "</div>"
+    );
+  }
+
+  function greeting() {
+    const h = new Date().getHours();
+    return h < 11 ? "Guten Morgen." : h < 18 ? "Schön, dass du da bist." : "Guten Abend.";
+  }
+
   function homeView(root) {
     const all = MODULES.map((m) => MT.stats.load(m.id));
     const sum = (k) => all.reduce((n, s) => n + s[k], 0);
@@ -126,32 +169,41 @@
     root.innerHTML =
       '<header class="home-head">' +
       '<div class="brand"><span class="brand-mark" aria-hidden="true">' + brandMark() + "</span>" +
-      "<div><h1>KFF Trainer</h1><p>Übungen für den kognitiven Teil des MedAT</p></div></div>" +
+      '<span class="brand-name">KFF Trainer</span></div>' +
       "</header>" +
+      '<section class="hero">' +
+      '<p class="hero-eyebrow">' + greeting() + "</p>" +
+      '<h1 class="hero-title">Trainiere den <mark>kognitiven Teil</mark> des MedAT.</h1>' +
+      countdownHtml() +
+      "</section>" +
       '<main class="screen">' +
       (pending
-        ? '<section class="notice"><strong>Abfrage wartet.</strong> Du hast um ' + MT.gedaechtnis.pendingTime() +
-          ' Uhr Allergieausweise gelernt.<div class="notice-actions"><a class="btn primary" href="#gedaechtnis" data-go="gedaechtnis">Zur Abfrage</a></div></section>'
+        ? '<section class="notice"><div><strong>Abfrage wartet.</strong> Du hast um ' + MT.gedaechtnis.pendingTime() +
+          " Uhr Allergieausweise gelernt.</div>" +
+          '<a class="btn primary" href="#gedaechtnis" data-go="gedaechtnis">Zur Abfrage</a></section>'
         : "") +
       '<section class="stat-row" aria-label="Deine Statistik">' +
-      '<div class="stat"><span class="stat-val">' + sum("dayCount") + '</span><span class="stat-label">Heute gelöst</span></div>' +
+      '<div class="stat"><span class="stat-val">' + sum("dayCount") + '</span><span class="stat-label">heute gelöst</span></div>' +
       '<div class="stat"><span class="stat-val">' + pct(sum("correct"), sum("total")) + '</span><span class="stat-label">Trefferquote</span></div>' +
-      '<div class="stat"><span class="stat-val">' + sum("total") + '</span><span class="stat-label">Insgesamt gelöst</span></div>' +
+      '<div class="stat"><span class="stat-val">' + sum("total") + '</span><span class="stat-label">insgesamt</span></div>' +
       "</section>" +
       '<h2 class="section-title">Untertests</h2>' +
       '<div class="modules">' +
       MODULES.map((m, i) => {
         const s = all[i];
+        const rate = s.total ? s.correct / s.total : null;
         return '<article class="module">' +
+          '<div class="module-head">' +
           '<div class="module-art" aria-hidden="true">' + m.art() + "</div>" +
-          '<div class="module-body">' +
-          '<div class="module-top"><h3>' + m.title + "</h3>" +
-          (s.total ? '<span class="module-stat">' + pct(s.correct, s.total) + "</span>" : "") + "</div>" +
-          '<p class="module-format">' + m.format + "</p>" +
+          '<div class="module-title"><h3>' + m.title + "</h3>" +
+          '<p class="module-format">' + m.format + "</p></div>" +
+          '<div class="module-ring" title="Trefferquote">' + ring(rate) +
+          '<span class="module-ring-val">' + (s.total ? Math.round(rate * 100) : "–") + "</span></div>" +
+          "</div>" +
           '<p class="module-text">' + m.text + "</p>" +
           '<div class="module-actions">' +
           m.actions.map((a, k) => '<a class="btn' + (k === 0 ? " primary" : "") + '" href="#' + a[1] + '" data-go="' + a[1] + '">' + a[0] + "</a>").join("") +
-          "</div></div></article>";
+          "</div></article>";
       }).join("") +
       "</div>" +
       '<p class="footnote">Aufgabenanzahl und Zeiten orientieren sich am bisherigen MedAT-Format. Prüfe das aktuelle Format auf der offiziellen MedAT-Seite. ' +
@@ -162,6 +214,12 @@
       if (!a) return;
       e.preventDefault();
       go(a.getAttribute("data-go"));
+    });
+    root.addEventListener("change", (e) => {
+      if (e.target.id !== "exam-date") return;
+      MT.store.set("exam.date", e.target.value || "");
+      const cd = root.querySelector(".countdown");
+      if (cd) cd.outerHTML = countdownHtml();
     });
     return null;
   }
