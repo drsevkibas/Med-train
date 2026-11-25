@@ -9,35 +9,40 @@
       title: "Figuren zusammensetzen",
       format: "15 Aufgaben · 20 Minuten",
       text: "Aus Einzelteilen die richtige Figur erkennen. Im Übungsmodus kannst du die Teile verschieben und drehen.",
-      ready: true,
+      art: () => MT.figurenViews.shapeSvg("sechseck"),
+      actions: [["Üben", "figuren-uebung"], ["Simulation", "figuren-sim"]],
     },
     {
       id: "gedaechtnis",
       title: "Gedächtnis und Merkfähigkeit",
       format: "8 Allergieausweise",
-      text: "Ausweise einprägen und nach einer Pause Fragen zu Namen, Blutgruppe, Allergien und mehr beantworten.",
-      ready: false,
+      text: "Ausweise einprägen und danach Fragen zu Foto, Name, Blutgruppe, Allergien und mehr beantworten.",
+      art: () => '<span class="art-id">ID</span>',
+      actions: [["Starten", "gedaechtnis"]],
     },
     {
       id: "zahlenfolgen",
       title: "Zahlenfolgen",
-      format: "Regel finden, Folge ergänzen",
+      format: "10 Aufgaben · 15 Minuten",
       text: "Die Regel hinter einer Zahlenfolge erkennen und die zwei fehlenden Zahlen bestimmen.",
-      ready: false,
+      art: () => '<span class="art-text">2 · 4 · 8</span>',
+      actions: [["Üben", "zahlen-uebung"], ["Simulation", "zahlen-sim"]],
     },
     {
       id: "wortfluessigkeit",
       title: "Wortflüssigkeit",
-      format: "Buchstabensalat",
+      format: "15 Aufgaben · 20 Minuten",
       text: "Aus vertauschten Buchstaben das Wort erkennen und seinen Anfangsbuchstaben wählen.",
-      ready: false,
+      art: () => '<span class="art-text">ZTSRE</span>',
+      actions: [["Üben", "wort-uebung"], ["Simulation", "wort-sim"]],
     },
     {
       id: "implikationen",
       title: "Implikationen erkennen",
-      format: "Logische Schlüsse",
+      format: "10 Aufgaben · 10 Minuten",
       text: "Aus zwei Aussagen ableiten, welche Schlussfolgerung zwingend stimmt.",
-      ready: false,
+      art: () => '<span class="art-text is-big">⇒</span>',
+      actions: [["Üben", "impl-uebung"], ["Simulation", "impl-sim"]],
     },
   ];
 
@@ -45,6 +50,13 @@
     home: homeView,
     "figuren-uebung": (root, app) => MT.figurenViews.practice(root, app),
     "figuren-sim": (root, app) => MT.figurenViews.simulation(root, app),
+    gedaechtnis: (root, app) => MT.gedaechtnis.setup(root, app),
+    "zahlen-uebung": (root, app) => MT.quiz.practice(root, app, MT.zahlenfolgen),
+    "zahlen-sim": (root, app) => MT.quiz.simulation(root, app, MT.zahlenfolgen, { againRoute: "zahlen-sim" }),
+    "wort-uebung": (root, app) => MT.quiz.practice(root, app, MT.wortfluessigkeit),
+    "wort-sim": (root, app) => MT.quiz.simulation(root, app, MT.wortfluessigkeit, { againRoute: "wort-sim" }),
+    "impl-uebung": (root, app) => MT.quiz.practice(root, app, MT.implikationen),
+    "impl-sim": (root, app) => MT.quiz.simulation(root, app, MT.implikationen, { againRoute: "impl-sim" }),
   };
 
   const appEl = document.getElementById("app");
@@ -103,41 +115,47 @@
 
   const app = { go, confirm: confirmDialog };
 
-  function pct(s) {
-    return s.total ? Math.round((s.correct / s.total) * 100) + " %" : "–";
+  function pct(correct, total) {
+    return total ? Math.round((correct / total) * 100) + " %" : "–";
   }
 
   function homeView(root) {
-    const s = MT.stats.load("figuren");
-    const preview = MT.figurenViews.shapeSvg("sechseck");
+    const all = MODULES.map((m) => MT.stats.load(m.id));
+    const sum = (k) => all.reduce((n, s) => n + s[k], 0);
+    const pending = MT.gedaechtnis.hasPending();
     root.innerHTML =
       '<header class="home-head">' +
       '<div class="brand"><span class="brand-mark" aria-hidden="true">' + brandMark() + "</span>" +
       "<div><h1>KFF Trainer</h1><p>Übungen für den kognitiven Teil des MedAT</p></div></div>" +
       "</header>" +
       '<main class="screen">' +
+      (pending
+        ? '<section class="notice"><strong>Abfrage wartet.</strong> Du hast um ' + MT.gedaechtnis.pendingTime() +
+          ' Uhr Allergieausweise gelernt.<div class="notice-actions"><a class="btn primary" href="#gedaechtnis" data-go="gedaechtnis">Zur Abfrage</a></div></section>'
+        : "") +
       '<section class="stat-row" aria-label="Deine Statistik">' +
-      '<div class="stat"><span class="stat-val">' + s.dayCount + '</span><span class="stat-label">Heute gelöst</span></div>' +
-      '<div class="stat"><span class="stat-val">' + pct(s) + '</span><span class="stat-label">Trefferquote</span></div>' +
-      '<div class="stat"><span class="stat-val">' + (s.bestSim == null ? "–" : s.bestSim + "/15") + '</span><span class="stat-label">Beste Simulation</span></div>' +
+      '<div class="stat"><span class="stat-val">' + sum("dayCount") + '</span><span class="stat-label">Heute gelöst</span></div>' +
+      '<div class="stat"><span class="stat-val">' + pct(sum("correct"), sum("total")) + '</span><span class="stat-label">Trefferquote</span></div>' +
+      '<div class="stat"><span class="stat-val">' + sum("total") + '</span><span class="stat-label">Insgesamt gelöst</span></div>' +
       "</section>" +
       '<h2 class="section-title">Untertests</h2>' +
       '<div class="modules">' +
-      MODULES.map((m) =>
-        '<article class="module' + (m.ready ? " is-ready" : "") + '">' +
-        (m.ready ? '<div class="module-art" aria-hidden="true">' + preview + "</div>" : "") +
-        '<div class="module-body">' +
-        '<div class="module-top"><h3>' + m.title + "</h3>" + (m.ready ? "" : '<span class="soon">Kommt bald</span>') + "</div>" +
-        '<p class="module-format">' + m.format + "</p>" +
-        '<p class="module-text">' + m.text + "</p>" +
-        (m.ready
-          ? '<div class="module-actions"><a class="btn primary" href="#figuren-uebung" data-go="figuren-uebung">Üben</a>' +
-            '<a class="btn" href="#figuren-sim" data-go="figuren-sim">Simulation</a></div>'
-          : "") +
-        "</div></article>"
-      ).join("") +
+      MODULES.map((m, i) => {
+        const s = all[i];
+        return '<article class="module">' +
+          '<div class="module-art" aria-hidden="true">' + m.art() + "</div>" +
+          '<div class="module-body">' +
+          '<div class="module-top"><h3>' + m.title + "</h3>" +
+          (s.total ? '<span class="module-stat">' + pct(s.correct, s.total) + "</span>" : "") + "</div>" +
+          '<p class="module-format">' + m.format + "</p>" +
+          '<p class="module-text">' + m.text + "</p>" +
+          '<div class="module-actions">' +
+          m.actions.map((a, k) => '<a class="btn' + (k === 0 ? " primary" : "") + '" href="#' + a[1] + '" data-go="' + a[1] + '">' + a[0] + "</a>").join("") +
+          "</div></div></article>";
+      }).join("") +
       "</div>" +
-      '<p class="footnote">Unabhängiges Übungsprojekt. Nicht offiziell und nicht mit den Medizinischen Universitäten oder dem MedAT verbunden. Deine Ergebnisse werden nur auf diesem Gerät gespeichert.</p>' +
+      '<p class="footnote">Aufgabenanzahl und Zeiten orientieren sich am bisherigen MedAT-Format. Prüfe das aktuelle Format auf der offiziellen MedAT-Seite. ' +
+      "Unabhängiges Übungsprojekt, nicht offiziell und nicht mit den Medizinischen Universitäten verbunden. Deine Ergebnisse werden nur auf diesem Gerät gespeichert.</p>" +
       "</main>";
     root.addEventListener("click", (e) => {
       const a = e.target.closest("[data-go]");
