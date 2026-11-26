@@ -1,5 +1,5 @@
 /* Service Worker: App offline verfügbar machen. Bei Änderungen VERSION erhöhen. */
-const VERSION = "kff-v6";
+const VERSION = "kff-v7";
 const FILES = [
   "./",
   "index.html",
@@ -11,6 +11,7 @@ const FILES = [
   "js/figuren-views.js",
   "js/quiz.js",
   "js/zahlenfolgen.js",
+  "js/wort-alternativen.js",
   "js/wortfluessigkeit.js",
   "js/implikationen.js",
   "js/gedaechtnis.js",

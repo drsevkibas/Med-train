@@ -1,0 +1,13 @@
+{
+  "name": "kff-trainer-tools",
+  "private": true,
+  "type": "module",
+  "description": "Entwicklungswerkzeuge für den KFF Trainer (nicht Teil der App).",
+  "scripts": {
+    "anagramme": "node check-anagrams.mjs"
+  },
+  "devDependencies": {
+    "dictionary-de": "^3.0.0",
+    "nspell": "^2.1.5"
+  }
+}

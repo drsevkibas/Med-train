@@ -17,7 +17,7 @@
     "KONZERT KRANKHEIT KRAWATTE KUGEL KUPFER LABOR LAMPE LANDKARTE LATERNE LEBER LEHRER LEITER LEUCHTTURM LIBELLE " +
     "LUNGE MANTEL MARMELADE MASCHINE MATRATZE MEDIZIN MELONE MESSER MIKROSKOP MINUTE MONTAG MUSCHEL " +
     "MUSEUM NACHBAR NADEL NASHORN NUDEL OPERATION ORANGE ORCHESTER PALAST PAPAGEI PFANNE PFEFFER PFLASTER " +
-    "PINSEL PLANET PRAXIS PRINZ PUPPE RAKETE RATHAUS REGEN REGENBOGEN REISE RINGEN RITTER ROSINE " +
+    "PINSEL PLANET PRAXIS PRINZ PUPPE RAKETE RATHAUS REGENBOGEN REISE RINGEN RITTER ROSINE " +
     "RUCKSACK SALAMI SANDALE SCHATTEN SCHAUKEL SCHERE SCHLOSS SCHNECKE SCHRANK SCHULE SCHWAMM SEIFE " +
     "SKELETT SOMMER SPIEGEL SPRITZE STAUBSAUGER STERN STIEFEL STRASSE STUDIUM TABLETTE TALENT TANNE TASCHE " +
     "TELEFON TEPPICH THEATER TINTE TOMATE TROMPETE TULPE TUNNEL UHRMACHER UNIVERSUM URLAUB VERBAND VOGEL " +
@@ -98,13 +98,34 @@
     return '<span class="big-letter">' + l + "</span>";
   }
 
+  function cap(w) {
+    return w.charAt(0) + w.slice(1).toLowerCase();
+  }
+
+  // In der Erklärung nicht nennen (abwertend, Eigennamen, Fachbegriffe). Gesperrt bleiben die Buchstaben trotzdem.
+  const HIDE_IN_NOTE = new Set(["MEIER", "TANGER", "PILSEN", "ESCHER", "TUPEL", "ADELN", "ORDNEN", "TRAGEN", "TIEBREAK"]);
+
+  function altNote(alt, first) {
+    const other = alt.nouns.filter((w) => w[0] !== first && !HIDE_IN_NOTE.has(w));
+    if (!other.length) return "";
+    const list = other.map((w) => "<strong>" + cap(w) + "</strong>");
+    const letters = Array.from(new Set(other.map((w) => w[0])));
+    return '<p class="muted small">Aus denselben Buchstaben lässt sich auch ' +
+      (list.length > 1 ? list.slice(0, -1).join(", ") + " oder " + list[list.length - 1] : list[0]) +
+      " bilden. Deshalb steht " + letters.join(" und ") + " nicht zur Auswahl.</p>";
+  }
+
   function make() {
     const word = U.pick(LIST);
     const scrambled = scramble(word);
     const first = word[0];
     // Ablenker: bevorzugt Buchstaben aus dem Wort selbst
-    const inWord = U.shuffle(Array.from(new Set(word.split("")))).filter((l) => l !== first);
-    const others = U.shuffle(ALPHABET.split("")).filter((l) => l !== first && inWord.indexOf(l) < 0);
+    // Andere Wörter aus denselben Buchstaben (z. B. HAFEN/FAHNE): deren Anfangsbuchstaben nie anbieten,
+    // damit immer genau eine Antwort richtig ist.
+    const alt = (MT.wortAlternativen || {})[word] || { nouns: [], all: [] };
+    const blocked = new Set(alt.all.map((w) => w[0]).concat([first]));
+    const inWord = U.shuffle(Array.from(new Set(word.split("")))).filter((l) => !blocked.has(l));
+    const others = U.shuffle(ALPHABET.split("")).filter((l) => !blocked.has(l) && inWord.indexOf(l) < 0);
     const distractors = inWord.slice(0, 3).concat(others).slice(0, 6).map(letterHtml);
     const { options, correct } = U.withNone(letterHtml(first), distractors, 0.2, "Keine der Antworten ist richtig.");
 
@@ -121,7 +142,7 @@
         "</div>",
       options,
       correct,
-      explain: "<p>Das gesuchte Wort ist <strong>" + display + "</strong>. Es beginnt mit " + first + ".</p>",
+      explain: "<p>Das gesuchte Wort ist <strong>" + display + "</strong>. Es beginnt mit " + first + ".</p>" + altNote(alt, first),
     };
   }
 
